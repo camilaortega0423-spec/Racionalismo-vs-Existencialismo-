@@ -160,3 +160,215 @@
         cursor: pointer;
     }
 </style>
+
+    <div id="quiz-screen">
+        <div class="quiz-header">
+            <span id="question-counter" aria-live="polite">Pregunta 1 de 6</span>
+            <span id="score-counter" aria-live="polite">Puntaje: 0</span>
+        </div>
+
+        <div class="question-text" id="question-text">Cargando pregunta...</div>
+
+        <div class="options-grid" id="options-container" role="list"></div>
+
+        <div class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true"></div>
+
+        <button class="next-btn" id="next-btn" type="button" onclick="siguientePregunta()">Siguiente Reto</button>
+    </div>
+
+    <div class="score-screen" id="score-screen" aria-live="polite">
+        <h2>¡Reto Completado! 🎉</h2>
+        <p id="final-message">Has terminado el recorrido por las corrientes filosóficas.</p>
+        <button class="restart-btn" id="restart-btn" type="button" onclick="reiniciarJuego()">Jugar de Nuevo</button>
+    </div>
+</div>
+
+<script>
+    const preguntas = [
+        {
+            tipo: "🧠 Racionalismo",
+            pregunta: "Si Descartes dijera 'Pienso, luego existo', ¿en qué basaría principalmente la fuente fundamental del conocimiento verdadero?",
+            opciones: [
+                "En la experiencia sensorial y los experimentos empíricos.",
+                "En la razón y el pensamiento deductivo puro.",
+                "En las emociones y la intuición del momento.",
+                "En la aceptación pasiva de las tradiciones antiguas."
+            ],
+            correcta: 1,
+            explicacion: "¡Exacto! El racionalismo defiende que la razón es la única vía para alcanzar verdades universales, independientes de los sentidos."
+        },
+        {
+            tipo: "🌌 Existencialismo",
+            pregunta: "Sartre afirmó célebremente que 'la existencia precede a la esencia'. ¿Qué significa esto en la práctica?",
+            opciones: [
+                "Primero nacemos sin un propósito predeterminado y luego nos definimos mediante nuestras elecciones.",
+                "Ya venimos con un destino escrito por el universo desde antes de nacer.",
+                "La materia física es lo único que importa en el cosmos.",
+                "Nuestra mente lógica controla absolutamente todo lo que nos sucede."
+            ],
+            correcta: 0,
+            explicacion: "¡Correcto! El existencialismo postula que primero existimos y somos libres, y somos nosotros quienes esculpimos nuestra propia esencia con cada decisión."
+        },
+        {
+            tipo: "🧩 Acertijo Filosófico",
+            pregunta: "Acertijo: 'Busco leyes universales, dudo de todo lo que veo y confío ciegamente en el engranaje de la lógica pura'. ¿Quién soy?",
+            opciones: [
+                "Un pensador existencialista angustiado por la libertad.",
+                "Un científico de datos moderno.",
+                "Un filósofo racionalista buscando certezas geométricas.",
+                "Un artista bohemio."
+            ],
+            correcta: 2,
+            explicacion: "¡Bien visto! Los racionalistas (como Descartes o Spinoza) buscaban construir el conocimiento bajo el modelo seguro de las matemáticas y la lógica."
+        },
+        {
+            tipo: "🌌 Existencialismo",
+            pregunta: "Frente al 'absurdo' de la vida y la falta de un sentido preestablecido, ¿qué propone el existencialismo que haga el individuo?",
+            opciones: [
+                "Deprimirse y rendirse ante la falta de respuestas.",
+                "Asumir la absoluta libertad y crear su propio sentido con valentía.",
+                "Esperar a que la lógica matemática resuelva el caos del mundo.",
+                "Seguir ciegamente las reglas de la sociedad."
+            ],
+            correcta: 1,
+            explicacion: "¡Así es! La angustia existencial se supera asumiendo la responsabilidad total de darle un propósito propio a nuestra existencia."
+        },
+        {
+            tipo: "🧠 Racionalismo",
+            pregunta: "¿Cuál de los siguientes enunciados se alinea mejor con la visión de un racionalista estricto?",
+            opciones: [
+                "Los sentidos a veces nos engañan; solo el intelecto puede darnos certezas inquebrantables.",
+                "Todo lo que sabemos entra primero por los ojos y las manos.",
+                "La vida no tiene ningún orden lógico ni estructura previsible.",
+                "La moral depende enteramente de la opinión popular de la época."
+            ],
+            correcta: 0,
+            explicacion: "¡Correcto! El escepticismo ante los sentidos es clásico del racionalismo cartesiano; la razón es el faro definitivo."
+        },
+        {
+            tipo: "🧩 Acertijo Filosófico",
+            pregunta: "Acertijo: 'No tengo manual de instrucciones, el universo no me dio un propósito y cada paso que doy construye mi identidad desde la nada'. ¿Quién habla?",
+            opciones: [
+                "Un seguidor del Racionalismo estricto.",
+                "Un adepto del Existencialismo.",
+                "Un autómata programado con lógica binaria.",
+                "Un seguidor de las matemáticas puras."
+            ],
+            correcta: 1,
+            explicacion: "¡Exacto! Esa profunda responsabilidad de construir sentido en el vacío es la esencia pura del grito existencialista."
+        }
+    ];
+
+    let preguntaActual = 0;
+    let puntaje = 0;
+    let bloqueado = false;
+
+    const questionCounter = document.getElementById("question-counter");
+    const scoreCounter = document.getElementById("score-counter");
+    const questionText = document.getElementById("question-text");
+    const optionsContainer = document.getElementById("options-container");
+    const feedback = document.getElementById("feedback");
+    const nextBtn = document.getElementById("next-btn");
+    const quizScreen = document.getElementById("quiz-screen");
+    const scoreScreen = document.getElementById("score-screen");
+    const finalMessage = document.getElementById("final-message");
+    const restartBtn = document.getElementById("restart-btn");
+
+    function cargarPregunta() {
+        bloqueado = false;
+        feedback.style.display = "none";
+        feedback.textContent = "";
+        nextBtn.style.display = "none";
+
+        const q = preguntas[preguntaActual];
+        questionCounter.textContent = q.tipo + " — Pregunta " + (preguntaActual + 1) + " de " + preguntas.length;
+        scoreCounter.textContent = "Puntaje: " + puntaje;
+        questionText.textContent = q.pregunta;
+
+        optionsContainer.innerHTML = "";
+        q.opciones.forEach((opcion, index) => {
+            const btn = document.createElement("button");
+            btn.classList.add("option-btn");
+            btn.setAttribute("type", "button");
+            btn.setAttribute("role", "listitem");
+            btn.setAttribute("aria-label", "Opción " + (index + 1) + ": " + opcion);
+            btn.textContent = opcion;
+
+            btn.addEventListener("click", () => seleccionarOpcion(index));
+
+            btn.addEventListener("keydown", (e) => {
+                if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+                    e.preventDefault();
+                    const next = btn.nextElementSibling || optionsContainer.firstElementChild;
+                    next && next.focus();
+                } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                    e.preventDefault();
+                    const prev = btn.previousElementSibling || optionsContainer.lastElementChild;
+                    prev && prev.focus();
+                }
+            });
+
+            optionsContainer.appendChild(btn);
+        });
+
+        const firstBtn = optionsContainer.querySelector(".option-btn");
+        if (firstBtn) firstBtn.focus();
+    }
+
+    function seleccionarOpcion(indexSeleccionado) {
+        if (bloqueado) return;
+        bloqueado = true;
+
+        const q = preguntas[preguntaActual];
+        const botones = Array.from(optionsContainer.children);
+
+        botones.forEach((b) => {
+            b.disabled = true;
+        });
+
+        const correcto = q.correcta;
+
+        if (indexSeleccionado === correcto) {
+            botones[indexSeleccionado].classList.add("correct");
+            puntaje += 10;
+            feedback.style.backgroundColor = "rgba(56, 176, 0, 0.15)";
+            feedback.style.color = "#a7f3d0";
+            feedback.innerHTML = "<strong>¡Correcto!</strong> " + q.explicacion;
+        } else {
+            botones[indexSeleccionado].classList.add("incorrect");
+            if (botones[correcto]) botones[correcto].classList.add("correct");
+            feedback.style.backgroundColor = "rgba(217, 4, 41, 0.15)";
+            feedback.style.color = "#fecaca";
+            feedback.innerHTML = "<strong>Incorrecto.</strong> " + q.explicacion;
+        }
+
+        scoreCounter.textContent = "Puntaje: " + puntaje;
+
+        feedback.style.display = "block";
+        nextBtn.style.display = "block";
+
+        nextBtn.focus();
+    }
+
+    function siguientePregunta() {
+        preguntaActual++;
+        if (preguntaActual < preguntas.length) {
+            cargarPregunta();
+        } else {
+            quizScreen.style.display = "none";
+            scoreScreen.style.display = "block";
+            finalMessage.textContent = "Has obtenido " + puntaje + " de " + (preguntas.length * 10) + " puntos posibles. ¡Tu mente navega con éxito entre la lógica y la libertad!";
+            restartBtn && restartBtn.focus();
+        }
+    }
+
+    function reiniciarJuego() {
+        preguntaActual = 0;
+        puntaje = 0;
+        scoreScreen.style.display = "none";
+        quizScreen.style.display = "block";
+        cargarPregunta();
+    }
+
+    cargarPregunta();
+</script>
